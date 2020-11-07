@@ -1,4 +1,5 @@
 import random
+from math import ceil
 
 class Graf():
     def __init__(self):             #rozmiar = random.randint(3,7) - drugi arg
@@ -6,24 +7,56 @@ class Graf():
         self.rozmiar = 0            # ile wierzchołków w grafie
         self.kolory = 1             # ile kolorów jest użytych jak na razie
         self.sasiedzi = []          # każda podlista to zbiór sąsiadów danego wierzchołka
-        self.kolorowanie = [0 for _ in range(self.rozmiar)]   # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza, że wierzchołek jest jeszcze nie pokolorowany
+        self.kolorowanie = [] #= [0 for _ in range(self.rozmiar)]   # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza, że wierzchołek jest jeszcze nie pokolorowany
 
-    def generuj_krawedzie(self):
-        for i in range(self.rozmiar):
-            self.sasiedzi.append([])
-        for i in range(self.rozmiar):
-            for j in range(i+1, self.rozmiar):
-                czy_krawedz = random.randint(0,1)
-                if czy_krawedz == 1:
-                    self.sasiedzi[i].append(j+1)
-                    self.sasiedzi[j].append(i+1)
+    def generuj_graf(self, v: int, nasycenie = 50, typ = 'z'): #petle_wlasne = True
+        # typ: z – zagęszczony, l – losowy, r – równomierny
+        typ.lower()
+        self.rozmiar = v
+        e = round(v*(v-1)/2 * nasycenie/100)
+        lista_incydencji = [[]for _ in range(v)]
+
+        wierzcholki = [i for i in range(v)]
+        random.shuffle(wierzcholki)
+        powtorka = False
+
+        # print(wierzcholki)
+        while e > 0:
+            i=1
+            for v0 in wierzcholki[:-1]:
+                if typ == 'z': krawedzi_z_wierzcholka = v-i
+                elif typ == "r" :
+                    krawedzi_z_wierzcholka = ceil(e*2/(v-i+1)) - len(lista_incydencji[v0]) # nieskierowany
+                    if krawedzi_z_wierzcholka > v-i: krawedzi_z_wierzcholka = v-i
+                    if powtorka: krawedzi_z_wierzcholka = ceil(e*2/(v-i+1))
+                elif typ == "l" : krawedzi_z_wierzcholka = random.randint(0,v-i)
+                else: raise ValueError("Nieznany typ grafu")
+
+                mozliwe_v1 = wierzcholki[i:]
+                if type != 'z': random.shuffle(mozliwe_v1)
+                # print("e", e, "i", i ,"v0", v0, "krawedzi", krawedzi_z_wierzcholka, "v1", mozliwe_v1)
+
+                for j in range(krawedzi_z_wierzcholka):
+                    if powtorka:
+                        if mozliwe_v1[j] in lista_incydencji[v0] :
+                            break
+                    lista_incydencji[v0].append(mozliwe_v1[j])
+                    lista_incydencji[mozliwe_v1[j]].append(v0)
+                    e-=1
+                    if e == 0:
+                        self.sasiedzi = lista_incydencji
+                        self.kolorowanie = [0 for _ in range(self.rozmiar)]
+                        return 0
+                i+=1
+            powtorka = True
+            print("powtórka")
 
     def pokaz_liste_incydencji(self):
         print("LISTA INCYDENCJI")
         for row in range(len(self.sasiedzi)):
             print(row+1, ".", end=" ")
             for col in range(len(self.sasiedzi[row])):
-                print(self.sasiedzi[row][col], end=" ")
+                print(self.sasiedzi[row][col]+1, end=" ")
             print()
         print()
 
@@ -38,7 +71,7 @@ class Graf():
         for kolor in range(1, self.kolory+1):
             uzyty = False
             for sasiad in self.sasiedzi[v]:
-                if self.kolorowanie[sasiad-1] == kolor:
+                if self.kolorowanie[sasiad] == kolor:
                     uzyty = True
                     break
             if uzyty == False:
@@ -77,8 +110,12 @@ class Graf():
 
 def main():
     g = Graf()
-    g.generuj_krawedzie()
-    g.wczytaj_z_pliku()
+    try:
+        g.generuj_graf(6, 50, 'z')
+    except ValueError as msg:
+        print("Nie można wygenerować grafu (", msg, ')')
+        return 0
+    # g.wczytaj_z_pliku()
     g.pokaz_liste_incydencji()
     g.koloruj_graf()
     g.pokaz_kolorowanie()
