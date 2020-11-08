@@ -1,5 +1,9 @@
 import random
 from math import floor
+import pandas as pd
+import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
 
 class Graf():
     def __init__(self):             # rozmiar = random.randint(3,7) - drugi arg
@@ -113,16 +117,26 @@ class Graf():
         self.kolorowanie = [0 for _ in range(self.rozmiar)]        # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza,
         file.close()                                                                    # że wierzchołek jest jeszcze nie pokolorowany
 
+    def l_krawedzi(self):
+        v0 = []
+        v1 = []
+        for i in range(0, len(self.sasiedzi)):
+            for sasiad in self.sasiedzi[i]:
+                if(i<sasiad):
+                    v0.append(i+1)
+                    v1.append(sasiad+1)
+        return v0, v1
+
     def visual(self):
         # Build a dataframe with your connections
         v0, v1 = self.l_krawedzi()
         df = pd.DataFrame({'from': v0, 'to': v1})
 
         # And a data frame with characteristics for your nodes
-        carac = pd.DataFrame({'ID': [i for i in range(self.rozmiar)] , 'myvalue': self.kolorowanie})
+        carac = pd.DataFrame({'ID': [i+1 for i in range(self.rozmiar)] , 'myvalue': self.kolorowanie})
 
         # Build your graph
-        G = nx.from_pandas_dataframe(df, 'from', 'to', create_using=nx.Graph())
+        G = nx.from_pandas_edgelist(df, 'from', 'to', create_using=nx.Graph())
 
         # The order of the node for networkX is the following order:
         G.nodes()
@@ -138,17 +152,17 @@ class Graf():
 
         # Custom the nodes:
         nx.draw(G, with_labels=True, node_color=carac['myvalue'].cat.codes, cmap=plt.cm.Set1, node_size=1500)
-
+        plt.show()
 
 def main():
     g = Graf()
     try:
-        g.generuj_graf(6)
+        g.generuj_graf(6, 50, 'l')
     except ValueError as msg:
         print("Nie można wygenerować grafu (", msg, ')')
         return 0
     except IndexError: g.generuj_graf(6)
-    g.wczytaj_z_pliku()
+    # g.wczytaj_z_pliku()
     g.pokaz_liste_incydencji()
     g.koloruj_graf()
     g.pokaz_kolorowanie()
