@@ -9,6 +9,7 @@ class Graf():
         self.kolorowanie = [0 for _ in range(self.rozmiar)]   # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza, że wierzchołek jest jeszcze nie pokolorowany
 
     def generuj_krawedzie(self):
+        self.rozmiar = random.randint(3,7)
         for i in range(self.rozmiar):
             self.sasiedzi.append([])
         for i in range(self.rozmiar):
