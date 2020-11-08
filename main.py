@@ -2,16 +2,15 @@ import random
 from math import floor
 
 class Graf():
-    def __init__(self):             #rozmiar = random.randint(3,7) - drugi arg
+    def __init__(self):             # rozmiar = random.randint(3,7) - drugi arg
         self.nazwa = "LOSOWY"
         self.rozmiar = 0            # ile wierzchołków w grafie
         self.kolory = 1             # ile kolorów jest użytychjak na razie
         self.sasiedzi = []          # każda podlista to zbiór sąsiadów danego wierzchołka
         self.kolorowanie = [] #= [0 for _ in range(self.rozmiar)]   # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza, że wierzchołek jest jeszcze nie pokolorowany
 
-    def generuj_graf(self, v: int, nasycenie = 50, typ = 'l'): #petle_wlasne = False
+    def generuj_graf(self, v: int, nasycenie = 50, typ = 'l'): # petle_wlasne = False
         # typ: z – zagęszczony, l – losowy, r – równomierny
-
         # BUG: przy grafie równomiernym czasem chce 2 krawędzie, a lista v1 jest jednoel.
         typ.lower()
         self.rozmiar = v
@@ -114,6 +113,32 @@ class Graf():
         self.kolorowanie = [0 for _ in range(self.rozmiar)]        # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza,
         file.close()                                                                    # że wierzchołek jest jeszcze nie pokolorowany
 
+    def visual(self):
+        # Build a dataframe with your connections
+        v0, v1 = self.l_krawedzi()
+        df = pd.DataFrame({'from': v0, 'to': v1})
+
+        # And a data frame with characteristics for your nodes
+        carac = pd.DataFrame({'ID': [i for i in range(self.rozmiar)] , 'myvalue': self.kolorowanie})
+
+        # Build your graph
+        G = nx.from_pandas_dataframe(df, 'from', 'to', create_using=nx.Graph())
+
+        # The order of the node for networkX is the following order:
+        G.nodes()
+        # Thus, we cannot give directly the 'myvalue' column to netowrkX, we need to arrange the order!
+
+        # Here is the tricky part: I need to reorder carac to assign the good color to each node
+        carac = carac.set_index('ID')
+        carac = carac.reindex(G.nodes())
+
+        # And I need to transform my categorical column in a numerical value: group1->1, group2->2...
+        carac['myvalue'] = pd.Categorical(carac['myvalue'])
+        carac['myvalue'].cat.codes
+
+        # Custom the nodes:
+        nx.draw(G, with_labels=True, node_color=carac['myvalue'].cat.codes, cmap=plt.cm.Set1, node_size=1500)
+
 
 def main():
     g = Graf()
@@ -127,6 +152,7 @@ def main():
     g.pokaz_liste_incydencji()
     g.koloruj_graf()
     g.pokaz_kolorowanie()
+    g.visual()
 
 if __name__ == '__main__':
     main()
