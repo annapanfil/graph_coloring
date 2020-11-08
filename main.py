@@ -9,8 +9,10 @@ class Graf():
         self.sasiedzi = []          # każda podlista to zbiór sąsiadów danego wierzchołka
         self.kolorowanie = [] #= [0 for _ in range(self.rozmiar)]   # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza, że wierzchołek jest jeszcze nie pokolorowany
 
-    def generuj_graf(self, v: int, nasycenie = 100, typ = 'r'): #petle_wlasne = True
+    def generuj_graf(self, v: int, nasycenie = 50, typ = 'l'): #petle_wlasne = False
         # typ: z – zagęszczony, l – losowy, r – równomierny
+
+        # BUG: przy grafie równomiernym czasem chce 2 krawędzie, a lista v1 jest jednoel.
         typ.lower()
         self.rozmiar = v
         e = round(v*(v-1)/2 * nasycenie/100)
@@ -29,19 +31,16 @@ class Graf():
                 if typ == 'z': krawedzi_z_wierzcholka = v-i
                 elif typ == "r":
                     krawedzi_z_wierzcholka = krawedzi - len(lista_incydencji[v0])
-                    # krawedzi_z_wierzcholka = ceil(e*2/(v-i+1)) - len(lista_incydencji[v0]) # nieskierowany
-                    # if krawedzi_z_wierzcholka > v-i: krawedzi_z_wierzcholka = v-i
-                    # if powtorka: krawedzi_z_wierzcholka = ceil(e*2/(v-i+1))
                 elif typ == "l" : krawedzi_z_wierzcholka = random.randint(0,v-i)
                 else: raise ValueError("Nieznany typ grafu")
 
                 mozliwe_v1 = wierzcholki[i:]
                 if type != 'z': random.shuffle(mozliwe_v1)
-                print("e", e, "i", i ,"v0", v0, "krawedzi", krawedzi_z_wierzcholka, "v1", mozliwe_v1)
+                # print("e", e, "i", i ,"v0", v0, "krawedzi", krawedzi_z_wierzcholka, "v1", mozliwe_v1)
 
                 for j in range(krawedzi_z_wierzcholka):
-                    if powtorka or typ == 'r':
-                        if mozliwe_v1[j] in lista_incydencji[v0] :
+                    if powtorka:
+                        if mozliwe_v1[j] in lista_incydencji[v0]:
                             break
                     lista_incydencji[v0].append(mozliwe_v1[j])
                     lista_incydencji[mozliwe_v1[j]].append(v0)
@@ -53,14 +52,14 @@ class Graf():
                 i+=1
             powtorka = True
             if typ == "r": krawedzi+=1
-            print("powtórka")
+            # print("powtórka")
 
     def pokaz_liste_incydencji(self):
         print("LISTA INCYDENCJI")
         for row in range(len(self.sasiedzi)):
-            print(row, ".", end=" ")
+            print(row+1, ".", end=" ")
             for col in range(len(self.sasiedzi[row])):
-                print(self.sasiedzi[row][col], end=" ")
+                print(self.sasiedzi[row][col]+1, end=" ")
             print()
         print()
 
@@ -91,25 +90,29 @@ class Graf():
             self.koloruj_wierzcholek(v)
 
     def wczytaj_z_pliku(self):
-        #WCZTYWANIE Z PLIKU
-        print("Podaj nazwe pliku z ktorego pobierzemy dane: ")          #otwieramy plik
-        nazwa_pliku: str=input()
-        self.nazwa = nazwa_pliku
-        file = open(nazwa_pliku, "r")
+        # WCZTYWANIE Z PLIKU
+        error = True
+        while(error):
+            print("Podaj nazwe pliku z ktorego pobierzemy dane: ")  #otwieramy plik
+            nazwa_pliku: str=input()
+            self.nazwa = nazwa_pliku
+            try:
+                file = open(nazwa_pliku, "r")
+                error = False
+            except: print("Nie można otworzyć pliku")
 
         self.rozmiar=int(file.readline())                    #wczytujemy z pliku ilosc wierzcholkow
 
-        for i in range(self.rozmiar):                        #wczytujemy dane z pliku
-            self.sasiedzi.append([])
-        #print("rozmiar: ", self.rozmiar, "sasiedzi: ", self.sasiedzi)
+        self.sasiedzi = [[]for _ in range(self.rozmiar)] #wczytujemy dane z pliku
+        # print("rozmiar: ", self.rozmiar, "sasiedzi: ", self.sasiedzi)
         for line in file:
             a,b = map(int, line.split())
             #print("a: ", a, " b: ", b)
             if(a<b):
-                self.sasiedzi[a-1].append(b)
-                self.sasiedzi[b-1].append(a)
+                self.sasiedzi[a-1].append(b-1)
+                self.sasiedzi[b-1].append(a-1)
         self.kolorowanie = [0 for _ in range(self.rozmiar)]        # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza,
-                                                                                    # że wierzchołek jest jeszcze nie pokolorowany
+        file.close()                                                                    # że wierzchołek jest jeszcze nie pokolorowany
 
 
 def main():
@@ -119,7 +122,8 @@ def main():
     except ValueError as msg:
         print("Nie można wygenerować grafu (", msg, ')')
         return 0
-    # g.wczytaj_z_pliku()
+    except IndexError: g.generuj_graf(6)
+    g.wczytaj_z_pliku()
     g.pokaz_liste_incydencji()
     g.koloruj_graf()
     g.pokaz_kolorowanie()
