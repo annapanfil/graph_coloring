@@ -110,8 +110,7 @@ class Graf():
         # WCZTYWANIE Z PLIKU
         error = True
         while(error):
-            print("Podaj nazwe pliku z ktorego pobierzemy dane: ")
-            nazwa_pliku: str=input()
+            nazwa_pliku: str=input("Podaj nazwe pliku z ktorego pobierzemy dane: ")
             self.nazwa = nazwa_pliku
             try:
                 file = open(nazwa_pliku, "r")
@@ -131,7 +130,7 @@ class Graf():
         self.kolorowanie = [0 for _ in range(self.rozmiar)]     # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza,
         file.close()                                            # że wierzchołek jest jeszcze nie pokolorowany
 
-    def l_krawedzi(self):
+    def lista_krawedzi(self):
         v0 = []
         v1 = []
         for i in range(0, len(self.sasiedzi)):
@@ -143,7 +142,7 @@ class Graf():
 
     def visual(self):
         # Build a dataframe with your connections
-        v0, v1 = self.l_krawedzi()
+        v0, v1 = self.lista_krawedzi()
         df = pd.DataFrame({'from': v0, 'to': v1})
 
         # And a data frame with characteristics for your nodes
@@ -168,18 +167,30 @@ class Graf():
         nx.draw(G, with_labels=True, node_color=carac['myvalue'].cat.codes, cmap=plt.cm.Set1, node_size=1500)
         plt.show()
 
+    def export(self):
+        # ZAPIS DO PLIKU
+        v0, v1 = self.lista_krawedzi()
+        print()
+        nazwa_pliku: str=input("Podaj nazwe pliku do zapisu grafu "+ self.nazwa + ": ")
+        with open(nazwa_pliku, "w") as file:
+            file.write(str(self.rozmiar)+"\n")
+            for i in range(len(v0)): file.write(str(v0[i])+ " "+ str(v1[i])+"\n")
+
 def main():
     g = Graf()
-    try:
-        g.generuj_graf(6)
-    except ValueError as msg:
-        print("Nie można wygenerować grafu (", msg, ')')
-        return 0
-    # g.wczytaj_z_pliku()
+    choice = input("f - wczytaj z pliku, g - generuj: ")
+    if choice == 'f': g.wczytaj_z_pliku()
+    else:
+        try:
+            g.generuj_graf(6)
+        except ValueError as msg:
+            print("Nie można wygenerować grafu (", msg, ')')
+            return 0
     g.pokaz_liste_incydencji()
     g.koloruj_graf()
     g.pokaz_kolorowanie()
     g.visual()
+    # g.export()
 
 if __name__ == '__main__':
     main()
