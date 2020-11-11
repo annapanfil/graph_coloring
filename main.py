@@ -13,87 +13,63 @@ class Graf():
         self.sasiedzi = []          # każda podlista to zbiór sąsiadów danego wierzchołka
         self.kolorowanie = [] #= [0 for _ in range(self.rozmiar)]   # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza, że wierzchołek jest jeszcze nie pokolorowany
 
-    def generuj_graf(self, v: int, nasycenie = 50, typ = 'r'): # petle_wlasne = False
-        # typ: z – zagęszczony, l – losowy, r – równomierny
+    def generuj_graf(self, v: int, nasycenie = 50, typ = 'l'): # petle_wlasne = False
+        ### GENERATOR GRAFÓW o ilości wierzchołków v i nasyceniu krawędziami[%] 'nasycenie' ###
+
         typ.lower()
+        if typ == 'z': self.nazwa = "zagęszczony"
+        elif typ == 'r': self.nazwa = "równomierny"
+        elif typ == 'l': self.nazwa = "losowy"
+        else: raise ValueError("Nieznany typ grafu")
+
         self.rozmiar = v
         e = round(v*(v-1)/2 * nasycenie/100)
-        # print(e)
         lista_incydencji = [[] for _ in range(v)]
 
+        # miesza wierzchołki, żeby rozkład był bardziej losowy
         wierzcholki = [i for i in range(v)]
+        random.shuffle(wierzcholki)
         powtorka = False
 
-        # DIZAŁAJĄCE R
-        if typ == "r":
-            krawedzi = floor(e*2/v)
+        # przy równomiernym rozkładzie najpierw daje każdemu wierzchołkowi minimalną liczbę krawędzi, później rozdziela pozostałe
+        if typ == 'r': krawedzi = floor(e*2/v)
 
-            # print(wierzcholki)
-            while e > 0:
-                i=1
-                for v0 in wierzcholki:
-                    if typ == 'z': krawedzi_z_wierzcholka = v-i
-                    elif typ == "r":
-                        krawedzi_z_wierzcholka = krawedzi - len(lista_incydencji[v0])
-                    elif typ == "l" : krawedzi_z_wierzcholka = random.randint(0,v-i)
-                    else: raise ValueError("Nieznany typ grafu")
+        while e > 0:
+            nr_wierzcholka = 1
+            for v0 in wierzcholki:
+                # w zagęszczonym przydziela każdemu wierzchołkowi maksymalną liczbę krawędzi
+                if typ == 'z': krawedzi_z_wierzcholka = v-nr_wierzcholka
+                elif typ == 'r': krawedzi_z_wierzcholka = krawedzi - len(lista_incydencji[v0])
+                # losowy działa losowo
+                else: krawedzi_z_wierzcholka = random.randint(0,v-nr_wierzcholka)
 
-                    mozliwe_v1 = wierzcholki[i:]
-                    if type != 'z': random.shuffle(mozliwe_v1)
-                    # print("e", e, "i", i ,"v0", v0, "krawedzi", krawedzi_z_wierzcholka, "v1", mozliwe_v1)
+                mozliwe_v1 = wierzcholki[nr_wierzcholka:] # bierzemy pod uwagę tylko "późniejsze" wierzchołki
+                if typ != 'z': random.shuffle(mozliwe_v1) # przy 'z' i tak łączymy z wszystkimi możliwymi wierzchołkami
 
-                    for j in range(krawedzi_z_wierzcholka):
-                        if len(mozliwe_v1)<krawedzi_z_wierzcholka:
-                            k = 0
-                            while(len(lista_incydencji[wierzcholki[k]]) > krawedzi + 1):
-                                k+=1
-                            v1 = wierzcholki[k]
-                        else:
-                            v1 = mozliwe_v1[j]
-                        # if powtorka:
-                        #     if mozliwe_v1[j] in lista_incydencji[v0]:
-                        #         continue #break
-                        lista_incydencji[v0].append(mozliwe_v1[j])
-                        lista_incydencji[mozliwe_v1[j]].append(v0)
-                        e-=1
-                        if e == 0:
-                            self.sasiedzi = lista_incydencji
-                            self.kolorowanie = [0 for _ in range(self.rozmiar)]
-                            return 0
-                    i+=1
-                # powtorka = True
-                if typ == "r": krawedzi+=1
-                # print("powtórka")
-        else:
-        # print(wierzcholki)
-            while e > 0:
-                i=1
-                for v0 in wierzcholki[:-1]:
-                    if typ == 'z': krawedzi_z_wierzcholka = v-i
-                    elif typ == "r":
-                        krawedzi_z_wierzcholka = krawedzi - len(lista_incydencji[v0])
-                    elif typ == "l" : krawedzi_z_wierzcholka = random.randint(0,v-i)
-                    else: raise ValueError("Nieznany typ grafu")
+                for i in range(krawedzi_z_wierzcholka):
+                    # print("e", e, "i", i ,"v0", v0, "krawedzi", krawedzi_z_wierzcholka, "v1", mozliwe_v1, "długosc", len(mozliwe_v1))
+                    if (typ == 'r' and len(mozliwe_v1)<i+1):
+                        # jeżeli skończyły nam się "późniejsze" wierzchołki, szukamy wierzchołka, który ma dobrą liczbę krawędzi i dokładamy mu jedną
+                        j = 0
+                        while(len(lista_incydencji[wierzcholki[j]]) > krawedzi):
+                            j+=1
+                        v1 = wierzcholki[j]
+                    elif powtorka:  # jeżeli idziemy kolejny raz, musimy sprawdzić, czy już nie ma takiej krawędzi
+                        if mozliwe_v1[i] in lista_incydencji[v0]: continue
+                    else:
+                        v1 = mozliwe_v1[i]
 
-                    mozliwe_v1 = wierzcholki[i:]
-                    if type != 'z': random.shuffle(mozliwe_v1)
-                    # print("e", e, "i", i ,"v0", v0, "krawedzi", krawedzi_z_wierzcholka, "v1", mozliwe_v1)
-
-                    for j in range(krawedzi_z_wierzcholka):
-                        if powtorka:
-                            if mozliwe_v1[j] in lista_incydencji[v0]:
-                                continue #break
-                        lista_incydencji[v0].append(mozliwe_v1[j])
-                        lista_incydencji[mozliwe_v1[j]].append(v0)
-                        e-=1
-                        if e == 0:
-                            self.sasiedzi = lista_incydencji
-                            self.kolorowanie = [0 for _ in range(self.rozmiar)]
-                            return 0
-                    i+=1
-                powtorka = True
-                if typ == "r": krawedzi+=1
-                # print("powtórka")
+                    # dodanie wierzchołków do listy incydencji
+                    lista_incydencji[v0].append(v1)
+                    lista_incydencji[v1].append(v0)
+                    e-=1
+                    if e == 0:
+                        self.sasiedzi = lista_incydencji
+                        self.kolorowanie = [0 for _ in range(self.rozmiar)]
+                        return 0    # kończy, gdy wykorzystał wszystkie krawędzie
+                nr_wierzcholka += 1
+            if typ == 'l': powtorka = True
+            if typ == "r": krawedzi += 1
 
     def pokaz_liste_incydencji(self):
         print("LISTA INCYDENCJI")
@@ -134,7 +110,7 @@ class Graf():
         # WCZTYWANIE Z PLIKU
         error = True
         while(error):
-            print("Podaj nazwe pliku z ktorego pobierzemy dane: ")  #otwieramy plik
+            print("Podaj nazwe pliku z ktorego pobierzemy dane: ")
             nazwa_pliku: str=input()
             self.nazwa = nazwa_pliku
             try:
@@ -144,7 +120,7 @@ class Graf():
 
         self.rozmiar=int(file.readline())                    #wczytujemy z pliku ilosc wierzcholkow
 
-        self.sasiedzi = [[]for _ in range(self.rozmiar)] #wczytujemy dane z pliku
+        self.sasiedzi = [[]for _ in range(self.rozmiar)] # wczytujemy dane z pliku
         # print("rozmiar: ", self.rozmiar, "sasiedzi: ", self.sasiedzi)
         for line in file:
             a,b = map(int, line.split())
@@ -152,8 +128,8 @@ class Graf():
             if(a<b):
                 self.sasiedzi[a-1].append(b-1)
                 self.sasiedzi[b-1].append(a-1)
-        self.kolorowanie = [0 for _ in range(self.rozmiar)]        # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza,
-        file.close()                                                                    # że wierzchołek jest jeszcze nie pokolorowany
+        self.kolorowanie = [0 for _ in range(self.rozmiar)]     # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza,
+        file.close()                                            # że wierzchołek jest jeszcze nie pokolorowany
 
     def l_krawedzi(self):
         v0 = []
@@ -199,7 +175,6 @@ def main():
     except ValueError as msg:
         print("Nie można wygenerować grafu (", msg, ')')
         return 0
-    except IndexError: g.generuj_graf(6)
     # g.wczytaj_z_pliku()
     g.pokaz_liste_incydencji()
     g.koloruj_graf()
