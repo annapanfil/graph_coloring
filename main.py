@@ -13,49 +13,87 @@ class Graf():
         self.sasiedzi = []          # każda podlista to zbiór sąsiadów danego wierzchołka
         self.kolorowanie = [] #= [0 for _ in range(self.rozmiar)]   # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza, że wierzchołek jest jeszcze nie pokolorowany
 
-    def generuj_graf(self, v: int, nasycenie = 50, typ = 'l'): # petle_wlasne = False
+    def generuj_graf(self, v: int, nasycenie = 50, typ = 'r'): # petle_wlasne = False
         # typ: z – zagęszczony, l – losowy, r – równomierny
-        # BUG: przy grafie równomiernym czasem chce 2 krawędzie, a lista v1 jest jednoel.
         typ.lower()
         self.rozmiar = v
         e = round(v*(v-1)/2 * nasycenie/100)
-        print(e)
-        lista_incydencji = [[]for _ in range(v)]
+        # print(e)
+        lista_incydencji = [[] for _ in range(v)]
 
         wierzcholki = [i for i in range(v)]
-        random.shuffle(wierzcholki)
         powtorka = False
-        if typ == "r": krawedzi = floor(e*2/v)
 
-        print(wierzcholki)
-        while e > 0:
-            i=1
-            for v0 in wierzcholki[:-1]:
-                if typ == 'z': krawedzi_z_wierzcholka = v-i
-                elif typ == "r":
-                    krawedzi_z_wierzcholka = krawedzi - len(lista_incydencji[v0])
-                elif typ == "l" : krawedzi_z_wierzcholka = random.randint(0,v-i)
-                else: raise ValueError("Nieznany typ grafu")
+        # DIZAŁAJĄCE R
+        if typ == "r":
+            krawedzi = floor(e*2/v)
 
-                mozliwe_v1 = wierzcholki[i:]
-                if type != 'z': random.shuffle(mozliwe_v1)
-                # print("e", e, "i", i ,"v0", v0, "krawedzi", krawedzi_z_wierzcholka, "v1", mozliwe_v1)
+            # print(wierzcholki)
+            while e > 0:
+                i=1
+                for v0 in wierzcholki:
+                    if typ == 'z': krawedzi_z_wierzcholka = v-i
+                    elif typ == "r":
+                        krawedzi_z_wierzcholka = krawedzi - len(lista_incydencji[v0])
+                    elif typ == "l" : krawedzi_z_wierzcholka = random.randint(0,v-i)
+                    else: raise ValueError("Nieznany typ grafu")
 
-                for j in range(krawedzi_z_wierzcholka):
-                    if powtorka:
-                        if mozliwe_v1[j] in lista_incydencji[v0]:
-                            break
-                    lista_incydencji[v0].append(mozliwe_v1[j])
-                    lista_incydencji[mozliwe_v1[j]].append(v0)
-                    e-=1
-                    if e == 0:
-                        self.sasiedzi = lista_incydencji
-                        self.kolorowanie = [0 for _ in range(self.rozmiar)]
-                        return 0
-                i+=1
-            powtorka = True
-            if typ == "r": krawedzi+=1
-            # print("powtórka")
+                    mozliwe_v1 = wierzcholki[i:]
+                    if type != 'z': random.shuffle(mozliwe_v1)
+                    # print("e", e, "i", i ,"v0", v0, "krawedzi", krawedzi_z_wierzcholka, "v1", mozliwe_v1)
+
+                    for j in range(krawedzi_z_wierzcholka):
+                        if len(mozliwe_v1)<krawedzi_z_wierzcholka:
+                            k = 0
+                            while(len(lista_incydencji[wierzcholki[k]]) > krawedzi + 1):
+                                k+=1
+                            v1 = wierzcholki[k]
+                        else:
+                            v1 = mozliwe_v1[j]
+                        # if powtorka:
+                        #     if mozliwe_v1[j] in lista_incydencji[v0]:
+                        #         continue #break
+                        lista_incydencji[v0].append(mozliwe_v1[j])
+                        lista_incydencji[mozliwe_v1[j]].append(v0)
+                        e-=1
+                        if e == 0:
+                            self.sasiedzi = lista_incydencji
+                            self.kolorowanie = [0 for _ in range(self.rozmiar)]
+                            return 0
+                    i+=1
+                # powtorka = True
+                if typ == "r": krawedzi+=1
+                # print("powtórka")
+        else:
+        # print(wierzcholki)
+            while e > 0:
+                i=1
+                for v0 in wierzcholki[:-1]:
+                    if typ == 'z': krawedzi_z_wierzcholka = v-i
+                    elif typ == "r":
+                        krawedzi_z_wierzcholka = krawedzi - len(lista_incydencji[v0])
+                    elif typ == "l" : krawedzi_z_wierzcholka = random.randint(0,v-i)
+                    else: raise ValueError("Nieznany typ grafu")
+
+                    mozliwe_v1 = wierzcholki[i:]
+                    if type != 'z': random.shuffle(mozliwe_v1)
+                    # print("e", e, "i", i ,"v0", v0, "krawedzi", krawedzi_z_wierzcholka, "v1", mozliwe_v1)
+
+                    for j in range(krawedzi_z_wierzcholka):
+                        if powtorka:
+                            if mozliwe_v1[j] in lista_incydencji[v0]:
+                                continue #break
+                        lista_incydencji[v0].append(mozliwe_v1[j])
+                        lista_incydencji[mozliwe_v1[j]].append(v0)
+                        e-=1
+                        if e == 0:
+                            self.sasiedzi = lista_incydencji
+                            self.kolorowanie = [0 for _ in range(self.rozmiar)]
+                            return 0
+                    i+=1
+                powtorka = True
+                if typ == "r": krawedzi+=1
+                # print("powtórka")
 
     def pokaz_liste_incydencji(self):
         print("LISTA INCYDENCJI")
@@ -157,7 +195,7 @@ class Graf():
 def main():
     g = Graf()
     try:
-        g.generuj_graf(6, 50, 'l')
+        g.generuj_graf(6)
     except ValueError as msg:
         print("Nie można wygenerować grafu (", msg, ')')
         return 0
