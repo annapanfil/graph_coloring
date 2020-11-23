@@ -81,10 +81,12 @@ class Graf():
             print()
         print()
 
-    def pokaz_kolorowanie(self):
+    def pokaz_kolorowanie(self, flag = ''):
         print("KOLOROWANIE")
-        for i in range(self.rozmiar):
-            print(i+1, ".", self.kolorowanie[i])
+
+        if flag != 's': #short
+            for i in range(self.rozmiar):
+                print(i+1, ".", self.kolorowanie[i])
 
         print("Dla grafu", self.nazwa , "użyto", self.kolory, "kolorów.\n")
 
@@ -181,7 +183,7 @@ def main():
             return 0
     # g.pokaz_liste_incydencji()
     g.koloruj_graf()
-    g.pokaz_kolorowanie()
+    g.pokaz_kolorowanie('s')
     g.visual()
     # g.export()
 
