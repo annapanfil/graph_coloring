@@ -5,6 +5,7 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 import re
+import argparse
 
 class Graf():
     def __init__(self):             # rozmiar = random.randint(3,7) - drugi arg
@@ -16,7 +17,6 @@ class Graf():
 
     def generuj_graf(self, v: int, nasycenie = 50, typ = 'l'): # petle_wlasne = False
         ### GENERATOR GRAFÓW o ilości wierzchołków v i nasyceniu krawędziami[%] 'nasycenie' ###
-
         typ.lower()
         if typ == 'z': self.nazwa = "zagęszczony"
         elif typ == 'r': self.nazwa = "równomierny"
@@ -81,14 +81,13 @@ class Graf():
             print()
         print()
 
-    def pokaz_kolorowanie(self, flag = ''):
-        print("KOLOROWANIE")
-
-        if flag != 's': #short
+    def pokaz_kolorowanie(self, long = False):
+        if long:
+            print("KOLOROWANIE")
             for i in range(self.rozmiar):
                 print(i+1, ".", self.kolorowanie[i])
 
-        print("Dla grafu", self.nazwa , "użyto", self.kolory, "kolorów.\n")
+        print("Dla grafu", self.nazwa , "użyto", self.kolory, "kolorów.")
 
     def koloruj_wierzcholek(self, v: int):
         for kolor in range(1, self.kolory+1):
@@ -109,30 +108,22 @@ class Graf():
         for v in range(self.rozmiar):
             self.koloruj_wierzcholek(v)
 
-    def wczytaj_z_pliku(self):
+    def wczytaj_z_pliku(self, filename: str):
         # WCZTYWANIE Z PLIKU
-        error = True
-        while(error):
-            nazwa_pliku: str=input("Podaj nazwe pliku z ktorego pobierzemy dane: ")
-            self.nazwa = nazwa_pliku
-            try:
-                file = open(nazwa_pliku, "r")
-                error = False
-            except: print("Nie można otworzyć pliku")
+        with open(filename, "r") as file:
+            self.rozmiar=int(file.readline())                #wczytujemy z pliku ilosc wierzcholkow
 
-        self.rozmiar=int(file.readline())                #wczytujemy z pliku ilosc wierzcholkow
-
-        self.sasiedzi = [[]for _ in range(self.rozmiar)] # wczytujemy dane z pliku
-        # print("rozmiar: ", self.rozmiar, "sasiedzi: ", self.sasiedzi)
-        for line in file:
-            if re.match("[0-9]* [0-9]*", line):
-                a,b = map(int, line.split())
-                #print("a: ", a, " b: ", b)
-                if(a<b):
-                    self.sasiedzi[a-1].append(b-1)
-                    self.sasiedzi[b-1].append(a-1)
-        self.kolorowanie = [0 for _ in range(self.rozmiar)]     # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza,
-        file.close()                                            # że wierzchołek jest jeszcze nie pokolorowany
+            self.sasiedzi = [[]for _ in range(self.rozmiar)] # wczytujemy dane z pliku
+            # print("rozmiar: ", self.rozmiar, "sasiedzi: ", self.sasiedzi)
+            for line in file:
+                if re.match("[0-9]* [0-9]*", line):
+                    a,b = map(int, line.split())
+                    #print("a: ", a, " b: ", b)
+                    if(a<b):
+                        self.sasiedzi[a-1].append(b-1)
+                        self.sasiedzi[b-1].append(a-1)
+            self.kolorowanie = [0 for _ in range(self.rozmiar)]     # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza,
+                                                                    # że wierzchołek jest jeszcze nie pokolorowany
 
     def lista_krawedzi(self):
         v0 = []
@@ -162,30 +153,71 @@ class Graf():
         nx.draw(G, with_labels=True, node_color=carac['myvalue'].cat.codes, cmap=plt.cm.Set1, node_size=1500)
         plt.show()
 
-    def export(self):
+    def export(self, filename: str):
         # ZAPIS DO PLIKU
         v0, v1 = self.lista_krawedzi()
         print()
-        nazwa_pliku: str=input("Podaj nazwe pliku do zapisu grafu "+ self.nazwa + ": ")
-        with open(nazwa_pliku, "w") as file:
+        # nazwa_pliku: str=input("Podaj nazwe pliku do zapisu grafu "+ self.nazwa + ": ")
+        with open(filename, "w") as file:
             file.write(str(self.rozmiar)+"\n")
             for i in range(len(v0)): file.write(str(v0[i])+ " "+ str(v1[i])+"\n")
+            print("Zapisano do pliku " + filename)
+
+def parse():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--file", help="import from file")
+    parser.add_argument("-v", "--vertexes", type=int, help="number of vertexes")
+    parser.add_argument("-s", "--saturation", type=int, help="saturation in %%")
+    parser.add_argument("-t", "--type", help="z – zagęszczony, r – równomierny, l – losowy")
+    parser.add_argument("-d", "--debug", action='store_true', help = "debug mode")
+    parser.add_argument("-e", "--export", help="export to file")
+    filename = parser.parse_args().file
+    verbose = parser.parse_args().long
+    export = parser.parse_args().export
+
+    if filename: return [verbose, export, filename, None]
+
+    vertexes = parser.parse_args().vertexes
+    saturation = parser.parse_args().saturation
+    type = parser.parse_args().type
+
+    generator_list = None
+    if vertexes: generator_list = [vertexes]
+    if saturation:
+        generator_list.append(saturation)
+        if type: generator_list.append(type)
+
+    return [verbose, export, None, generator_list]
+
+
 
 def main():
+    verbose, export, filename, generator_list = parse();
+    # print(verbose, filename, generator_list)
+
     g = Graf()
-    choice = input("f - wczytaj z pliku, g - generuj: ")
-    if choice == 'f': g.wczytaj_z_pliku()
-    else:
+
+    if filename:
         try:
-            g.generuj_graf(6)
+            g.wczytaj_z_pliku(filename)
+        except FileNotFoundError as msg:
+            print("Nie można otworzyć pliku")
+            return 0
+    elif generator_list:
+        try:
+            g.generuj_graf(*generator_list)
         except ValueError as msg:
             print("Nie można wygenerować grafu (", msg, ')')
             return 0
-    # g.pokaz_liste_incydencji()
+    else:
+        print("Nie podano parametrów")
+        return 0
+
+    if verbose: g.pokaz_liste_incydencji()
     g.koloruj_graf()
-    g.pokaz_kolorowanie('s')
+    g.pokaz_kolorowanie(verbose)
     g.visual()
-    # g.export()
+    if export: g.export(export)
 
 if __name__ == '__main__':
     main()
