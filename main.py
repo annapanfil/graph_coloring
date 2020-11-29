@@ -16,76 +16,115 @@ class Graph:
         self.incidence_list = []  # każda podlista to zbiór sąsiadów danego wierzchołka
         self.coloring = []  # = [0 for _ in range(self.rozmiar)]   # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza, że wierzchołek jest jeszcze nie pokolorowany
 
-    def generate_graph(self, size: int, saturation=50, type='r'):  # petle_wlasne = False
-        # GENERATOR GRAFÓW o ilości wierzchołków size i nasyceniu krawędziami[%] 'saturation'
-        type.lower()
-        if type == 'c':
-            self.name = "zagęszczony"  # condensed
-        elif type == 'e':
-            self.name = "równomierny"  # even
-        elif type == 'r':
-            self.name = "losowy"  # random
-        else:
-            raise ValueError("Nieznany typ grafu")
-
-        self.size = size
-        edges = round(size * (size - 1) / 2 * saturation / 100)
-        incidence_list = [[] for _ in range(size)]
+    def generate_graph_r(self, size: int, edges: int):
+        # GENERATOR GRAFÓW losowych
 
         # miesza wierzchołki, żeby rozkład był bardziej losowy
         vertexes = [i for i in range(size)]
         random.shuffle(vertexes)
         repeat = False
 
-        # przy równomiernym rozkładzie najpierw daje każdemu wierzchołkowi minimalną liczbę krawędzi, później rozdziela pozostałe
-        if type == 'e': edges_per_v = floor(edges * 2 / size)
+        while edges > 0:
+            for vertex_no in range(len(vertexes)):
+                v0 = vertexes[vertex_no]
+                # bierzemy pod uwagę tylko "późniejsze" wierzchołki, których jeszcze nie ma w liście incydencji
+                possible_v1 = vertexes[vertex_no+1:]
+                if repeat: possible_v1 = [x for x in possible_v1 if x not in self.incidence_list[v0]]
+                random.shuffle(possible_v1)
+
+                edges_from_v = random.randint(0, len(possible_v1))
+
+                for i in range(edges_from_v):
+                    # dodanie wierzchołków do listy incydencji
+                    v1 = possible_v1[i]
+                    self.incidence_list[v0].append(v1)
+                    self.incidence_list[v1].append(v0)
+                    edges -= 1
+                    if edges == 0:
+                        return 0  # kończy, gdy wykorzystał wszystkie krawędzie
+            repeat = True
+
+    def generate_graph_c(self, size: int, edges: int):
+        # GENERATOR GRAFÓW zagęszczonych
+
+        # miesza wierzchołki, żeby rozkład był bardziej losowy
+        vertexes = [i for i in range(size)]
+        random.shuffle(vertexes)
+
+        for i in range(len(vertexes)):
+            # przydziela każdemu wierzchołkowi maksymalną liczbę krawędzi
+            v0 = vertexes[i]
+            for v1 in vertexes[i+1:]:
+                self.incidence_list[v0].append(v1)
+                self.incidence_list[v1].append(v0)
+                edges -= 1
+                if edges == 0:
+                    return 0  # kończy, gdy wykorzystał wszystkie krawędzie
+
+    def generate_graph_e(self, size: int, edges: int):
+        # GENERATOR GRAFÓW równomiernych
+
+        # miesza wierzchołki, żeby rozkład był bardziej losowy
+        vertexes = [i for i in range(size)]
+        random.shuffle(vertexes)
+
+        # najpierw daje każdemu wierzchołkowi minimalną liczbę krawędzi, później rozdziela pozostałe
+        edges_per_v = floor(edges * 2 / size)
 
         while edges > 0:
             vertex_no = 1
             for v0 in vertexes:
-                # w zagęszczonym przydziela każdemu wierzchołkowi maksymalną liczbę krawędzi
-                if type == 'c':
-                    edges_from_v = size - vertex_no
-                elif type == 'e':
-                    edges_from_v = edges_per_v - len(incidence_list[v0])
-                # losowy działa losowo
-                else:
-                    edges_from_v = random.randint(0, size - vertex_no)
+                edges_from_v = edges_per_v - len(self.incidence_list[v0])
 
                 possible_v1 = vertexes[vertex_no:]  # bierzemy pod uwagę tylko "późniejsze" wierzchołki
-                if type != 'c': random.shuffle(possible_v1)  # przy 'c' i tak łączymy z wszystkimi możliwymi wierzchołkami
+                random.shuffle(possible_v1)
 
                 for i in range(edges_from_v):
-                    # print("edges", edges, "i", i ,"v0", v0, "edges_per_v", edges_from_v, "v1", possible_v1, "długosc", len(possible_v1))
-                    if (type == 'e' and len(possible_v1) < i + 1):
-                        # jeżeli skończyły nam się "późniejsze" wierzchołki, szukamy wierzchołka, który ma dobrą liczbę krawędzi i dokładamy mu jedną
+                    if len(possible_v1) < i + 1:
+                        # jeżeli skończyły nam się "późniejsze" wierzchołki, szukamy wierzchołka,
+                        # który ma dobrą liczbę krawędzi i dokładamy mu jedną
                         j = 0
-                        while len(incidence_list[vertexes[j]]) > edges_per_v:
+                        while len(self.incidence_list[vertexes[j]]) > edges_per_v:
                             j += 1
                         v1 = vertexes[j]
-                    elif repeat:  # jeżeli idziemy kolejny raz, musimy sprawdzić, czy już nie ma takiej krawędzi
-                        if possible_v1[i] in incidence_list[v0]: continue
                     else:
+                        # dodanie wierzchołków do listy incydencji
                         v1 = possible_v1[i]
-
-                    # dodanie wierzchołków do listy incydencji
-                    incidence_list[v0].append(v1)
-                    incidence_list[v1].append(v0)
-                    edges -= 1
-                    if edges == 0:
-                        self.incidence_list = incidence_list
-                        self.coloring = [0 for _ in range(self.size)]
-                        return 0  # kończy, gdy wykorzystał wszystkie krawędzie
+                        self.incidence_list[v0].append(v1)
+                        self.incidence_list[v1].append(v0)
+                        edges -= 1
+                        if edges == 0:
+                            return 0  # kończy, gdy wykorzystał wszystkie krawędzie
                 vertex_no += 1
-            if type == 'r': repeat = True
-            if type == 'e': edges_per_v += 1
+            edges_per_v += 1
 
-    def show_incidence_list(self):
+    def generate_graph(self, size: int, saturation=50, graph_type='r'):  # petle_wlasne = False
+        # GENERATOR GRAFÓW o ilości wierzchołków size i nasyceniu krawędziami[%] 'saturation'
+        graph_type.lower()
+        if graph_type not in {'c', 'e', 'r'}:
+            raise ValueError("Nieznany typ grafu")
+
+        self.size = size
+        self.incidence_list = [[] for _ in range(size)]
+        self.coloring = [0 for _ in range(self.size)]
+        edges = round(size * (size - 1) / 2 * saturation / 100)
+
+        if graph_type == 'c':              # condensed
+            self.name = "zagęszczony"
+            self.generate_graph_c(size, edges)
+        elif graph_type == 'e':            # even
+            self.name = "równomierny"
+            self.generate_graph_e(size, edges)
+        elif graph_type == 'r':            # random
+            self.name = "losowy"
+            self.generate_graph_r(size, edges)
+
+    def show_incidence_list(self, start=1):
         print("LISTA INCYDENCJI")
         for row in range(len(self.incidence_list)):
-            print(row + 1, ".", end=" ")
+            print(row + start, ".", end=" ")
             for col in range(len(self.incidence_list[row])):
-                print(self.incidence_list[row][col] + 1, end=" ")
+                print(self.incidence_list[row][col] + start, end=" ")
             print()
         print()
 
@@ -223,7 +262,7 @@ def main():
         print("Nie podano parametrów")
         return 0
 
-    if verbose: g.show_incidence_list()
+    if verbose: g.show_incidence_list(0)
     g.graph_coloring_greedy()
     g.show_coloring(verbose)
     g.visual()
