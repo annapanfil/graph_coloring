@@ -10,7 +10,7 @@ import argparse
 
 class Graph:
     def __init__(self):  # rozmiar = random.randint(3,7) - drugi arg
-        self.name = "LOSOWY"
+        self.name = "bez nazwy"
         self.size = 0  # ile wierzchołków w grafie
         self.colors = 1  # ile kolorów jest użytychjak na razie
         self.incidence_list = []  # każda podlista to zbiór sąsiadów danego wierzchołka
@@ -90,11 +90,11 @@ class Graph:
                     else:
                         # dodanie wierzchołków do listy incydencji
                         v1 = possible_v1[i]
-                        self.incidence_list[v0].append(v1)
-                        self.incidence_list[v1].append(v0)
-                        edges -= 1
-                        if edges == 0:
-                            return 0  # kończy, gdy wykorzystał wszystkie krawędzie
+                    self.incidence_list[v0].append(v1)
+                    self.incidence_list[v1].append(v0)
+                    edges -= 1
+                    if edges == 0:
+                        return 0  # kończy, gdy wykorzystał wszystkie krawędzie
                 vertex_no += 1
             edges_per_v += 1
 
@@ -171,7 +171,7 @@ class Graph:
                         self.incidence_list[b - 1].append(a - 1)
             self.coloring = [0 for _ in
                              range(self.size)]  # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza,
-            # że wierzchołek jest jeszcze nie pokolorowany
+                                                # że wierzchołek jest jeszcze nie pokolorowany
 
     def list_of_edges(self):
         v0 = []
@@ -229,20 +229,20 @@ def parse():
 
     vertexes = parser.parse_args().vertexes
     saturation = parser.parse_args().saturation
-    type = parser.parse_args().type
+    graph_type = parser.parse_args().type
 
     generator_list = None
     if vertexes: generator_list = [vertexes]
     if saturation:
         generator_list.append(saturation)
-        if type: generator_list.append(type)
+        if graph_type: generator_list.append(graph_type)
 
     return [debug, export, None, generator_list]
 
 
 def main():
-    verbose, export, filename, generator_list = parse()
-    # print(verbose, filename, generator_list)
+    debug, export, filename, generator_list = parse()
+    # print(debug, filename, generator_list)
 
     g = Graph()
 
@@ -262,9 +262,9 @@ def main():
         print("Nie podano parametrów")
         return 0
 
-    if verbose: g.show_incidence_list(0)
+    if debug: g.show_incidence_list(0)
     g.graph_coloring_greedy()
-    g.show_coloring(verbose)
+    g.show_coloring(debug)
     g.visual()
     if export: g.export(export)
 
