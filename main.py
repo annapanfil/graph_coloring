@@ -159,7 +159,7 @@ class Graph:
         # WCZTYWANIE Z PLIKU
         with open(filename, "r") as file:
             self.size = int(file.readline())  # wczytujemy z pliku ilosc wierzcholkow
-
+            self.name = filename
             self.incidence_list = [[] for _ in range(self.size)]  # wczytujemy dane z pliku
             # print("rozmiar: ", self.size, "sasiedzi: ", self.incidence_list)
             for line in file:
@@ -173,7 +173,7 @@ class Graph:
                              range(self.size)]  # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza,
                                                 # że wierzchołek jest jeszcze nie pokolorowany
 
-    def list_of_edges(self):
+    def list_of_edges_two_lists(self):
         v0 = []
         v1 = []
         for i in range(0, len(self.incidence_list)):
@@ -183,9 +183,17 @@ class Graph:
                     v1.append(neighbour + 1)
         return v0, v1
 
+    def list_of_edges_pairs(self):
+        edges = []
+        for i in range(0, len(self.incidence_list)):
+            for neighbour in self.incidence_list[i]:
+                if i < neighbour:
+                    edges.append((i, neighbour))
+        return edges
+
     def visual(self):
         # SHOW GRAPH VISUAL REPRESENTATION
-        v0, v1 = self.list_of_edges()
+        v0, v1 = self.list_of_edges_two_lists()
         df = pd.DataFrame({'from': v0, 'to': v1})  # connections
         carac = pd.DataFrame(
             {'ID': [i + 1 for i in range(self.size)], 'myvalue': self.coloring})  # characteristics for nodes
@@ -204,7 +212,7 @@ class Graph:
 
     def export(self, filename: str):
         # ZAPIS DO PLIKU
-        v0, v1 = self.list_of_edges()
+        v0, v1 = self.list_of_edges_two_lists()
         print()
         # nazwa_pliku: str=input("Podaj nazwe pliku do zapisu grafu "+ self.nazwa + ": ")
         with open(filename, "w") as file:
@@ -262,7 +270,7 @@ def main():
         print("Nie podano parametrów")
         return 0
 
-    if debug: g.show_incidence_list(0)
+    if debug: g.show_incidence_list()
     g.graph_coloring_greedy()
     g.show_coloring(debug)
     g.visual()
