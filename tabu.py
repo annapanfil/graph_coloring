@@ -47,7 +47,10 @@ class Tabu:
         return []  # wierzchołek 3 ->  kolor 2
 
     def is_in_tabu(self, solution) -> bool:
-        return False
+        if solution.move in self.tabu:
+            return True
+        else:
+            return False
 
     def main(self) -> list:
         while True:
