@@ -52,11 +52,12 @@ class Tabu:
         else:
             return False
 
+
     def main(self) -> list:
         while True:
             for i in range(self.max_number_of_iterations):
                 neighbours = self.generate_neighbours()
-                neighbours = sort_neighbours_by_value()
+                neighbours.sort(key=operator.attrgetter('value'))   # neighbours = sort_neighbours_by_value(neighbours)  
                 for neighbour in neighbours:
                     if not self.is_in_tabu(neighbour):
                         self.current_solution = neighbour
