@@ -239,6 +239,75 @@ def parse():
 
     return [debug, export, None, generator_list]
 
+    def wczytaj_z_pliku(self):
+        # WCZTYWANIE Z PLIKU
+        error = True
+        while(error):
+            nazwa_pliku: str=input("Podaj nazwe pliku z ktorego pobierzemy dane: ")
+            self.nazwa = nazwa_pliku
+            try:
+                file = open(nazwa_pliku, "r")
+                error = False
+            except: print("Nie można otworzyć pliku")
+
+        self.rozmiar=int(file.readline())                    #wczytujemy z pliku ilosc wierzcholkow
+
+        self.sasiedzi = [[]for _ in range(self.rozmiar)] # wczytujemy dane z pliku
+        # print("rozmiar: ", self.rozmiar, "sasiedzi: ", self.sasiedzi)
+        for line in file:
+            a,b = map(int, line.split())
+            #print("a: ", a, " b: ", b)
+            if(a<b):
+                self.sasiedzi[a-1].append(b-1)
+                self.sasiedzi[b-1].append(a-1)
+        self.kolorowanie = [0 for _ in range(self.rozmiar)]     # kolory numerujemy od 1 w górę, 0 na pozycji kolorów oznacza,
+        file.close()                                            # że wierzchołek jest jeszcze nie pokolorowany
+
+    def lista_krawedzi(self):
+        v0 = []
+        v1 = []
+        for i in range(0, len(self.sasiedzi)):
+            for sasiad in self.sasiedzi[i]:
+                if(i<sasiad):
+                    v0.append(i+1)
+                    v1.append(sasiad+1)
+        return v0, v1
+
+    def visual(self):
+        # Build a dataframe with your connections
+        v0, v1 = self.lista_krawedzi()
+        df = pd.DataFrame({'from': v0, 'to': v1})
+
+        # And a data frame with characteristics for your nodes
+        carac = pd.DataFrame({'ID': [i+1 for i in range(self.rozmiar)] , 'myvalue': self.kolorowanie})
+
+        # Build your graph
+        G = nx.from_pandas_edgelist(df, 'from', 'to', create_using=nx.Graph())
+
+        # The order of the node for networkX is the following order:
+        G.nodes()
+        # Thus, we cannot give directly the 'myvalue' column to netowrkX, we need to arrange the order!
+
+        # Here is the tricky part: I need to reorder carac to assign the good color to each node
+        carac = carac.set_index('ID')
+        carac = carac.reindex(G.nodes())
+
+        # And I need to transform my categorical column in a numerical value: group1->1, group2->2...
+        carac['myvalue'] = pd.Categorical(carac['myvalue'])
+        carac['myvalue'].cat.codes
+
+        # Custom the nodes:
+        nx.draw(G, with_labels=True, node_color=carac['myvalue'].cat.codes, cmap=plt.cm.Set1, node_size=1500)
+        plt.show()
+
+    def export(self):
+        # ZAPIS DO PLIKU
+        v0, v1 = self.lista_krawedzi()
+        print()
+        nazwa_pliku: str=input("Podaj nazwe pliku do zapisu grafu "+ self.nazwa + ": ")
+        with open(nazwa_pliku, "w") as file:
+            file.write(str(self.rozmiar)+"\n")
+            for i in range(len(v0)): file.write(str(v0[i])+ " "+ str(v1[i])+"\n")
 
 def main():
     debug, export, filename, generator_list = parse()
@@ -267,7 +336,7 @@ def main():
     g.show_coloring(debug)
     g.visual()
     if export: g.export(export)
-
+      
 
 if __name__ == '__main__':
     main()
