@@ -5,8 +5,8 @@ from collections import deque
 # generowanie 1. rozwiązania - A
 # generate_neighbours - A
 # coloring_from_move – D
-# is_in_tabu - D
-# sort_neighbours_by_value
+# is_in_tabu - D+ 
+# sort_neighbours_by_value - D+
 # usuwanie z listy tabu
 # podział na pliki
 # ustalenie parametrów
