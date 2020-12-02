@@ -1,18 +1,15 @@
 import operator
-from main import Graph
+from graph import Graph
 from collections import deque
 import random
 
 
 #TODO:
-# generowanie 1. rozwiązania - A+
-# generate_neighbours - A+
 # coloring_from_move – D
-# is_in_tabu - D+ 
-# sort_neighbours_by_value - D+
-# usuwanie z listy tabu
-# podział na pliki
+# dodawanie i usuwanie z listy tabu - A
 # ustalenie parametrów
+# warunki akceptowania ruchów tabu
+# przypisanie pokolorowania do grafu i wyświetlenie go (ogólnie main)
 
 
 class Solution:
@@ -52,7 +49,8 @@ class Tabu:
         for _ in range(how_many):
             # losuj wierzchołek i kolor tak, żeby uniknąć powtórzeń
             vertex = random.choice(tuple(vertexes_to_try))
-            vertexes_to_try.remove(vertex)
+            vertexes_to_try.remove(vertex)  #QUESTION: czy wierzchołki powinien powtarzać?
+
             color = random.randint(0, self.colors_number)
             while color == self.current_solution.coloring[vertex]:
                 color = random.randint(0, self.colors_number)
@@ -84,11 +82,3 @@ class Tabu:
                     return [self.current_solution.coloring, self.colors_number]
 
             self.colors_number += 1
-
-
-if __name__ == '__main__':
-    g = Graph()
-    g.import_from_file("simple")
-
-    t = Tabu(g)
-    t.main()
