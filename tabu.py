@@ -8,8 +8,6 @@ import random
 # coloring_from_move – D
 # ustalenie parametrów
 # warunki akceptowania ruchów tabu
-# przypisanie pokolorowania do grafu i wyświetlenie go (ogólnie main)
-
 
 class Solution:
     def __init__(self, list_of_edges: list, parent, move=(None, None)):  # parent: Solution

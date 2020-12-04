@@ -11,11 +11,13 @@ def parse():
     parser.add_argument("-t", "--type", help="c – condensed, e – even, r – random")
     parser.add_argument("-d", "--debug", action='store_true', help="debug mode")
     parser.add_argument("-e", "--export", help="export to file")
+    parser.add_argument("-g", "--greedy", action='store_true', help="use greedy instead of tabu")
     filename = parser.parse_args().file
     debug = parser.parse_args().debug
     export = parser.parse_args().export
+    greedy = parser.parse_args().greedy
 
-    if filename: return [debug, export, filename, None]
+    if filename: return [debug, export, filename, None, greedy]
 
     vertexes = parser.parse_args().vertexes
     saturation = parser.parse_args().saturation
@@ -27,37 +29,44 @@ def parse():
         generator_list.append(saturation)
         if graph_type: generator_list.append(graph_type)
 
-    return [debug, export, None, generator_list]
+    return [debug, export, None, generator_list, greedy]
 
 
 def main():
-    # debug, export, filename, generator_list = parse()
-
-    graph = Graph()
-    graph.import_from_file("simple")
-
-    tabu = Tabu(g)
-    tabu.main()
+    debug, export, filename, generator_list, greedy = parse()
 
     # GENEROWANIE GRAFU WG FLAG
-    # if filename:
-    #     try:
-    #         graph.import_from_file(filename)
-    #     except FileNotFoundError:
-    #         print("Nie można otworzyć pliku")
-    #         return 0
-    # elif generator_list:
-    #     try:
-    #         graph.generate_graph(*generator_list)
-    #     except ValueError as msg:
-    #         print("Nie można wygenerować grafu (", msg, ')')
-    #         return 0
-    # else:
-    #     print("Nie podano parametrów")
-    #     return 0
-    #
-    # if debug: graph.show_incidence_list()
-    # graph.graph_coloring_greedy()
-    # graph.show_coloring(debug)
-    # graph.visual()
-    # if export: graph.export(export)
+    graph = Graph()
+    if filename:
+        try:
+            graph.import_from_file(filename)
+        except FileNotFoundError:
+            print("Nie można otworzyć pliku")
+            return 0
+    elif generator_list:
+        try:
+            graph.generate_graph(*generator_list)
+        except ValueError as msg:
+            print("Nie można wygenerować grafu (", msg, ')')
+            return 0
+    else:
+        print("Nie podano parametrów")
+        return 0
+
+    if debug: graph.show_incidence_list()
+
+    # KOLOROWANIE
+    if greedy:
+        graph.graph_coloring_greedy()
+    else:
+        tabu = Tabu(graph)
+        tabu.main()
+
+    graph.show_coloring(debug)
+    graph.visual()
+
+    if export: graph.export(export)
+
+
+if __name__ == '__main__':
+    main()
