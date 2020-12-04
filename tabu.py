@@ -6,7 +6,6 @@ import random
 
 #TODO:
 # coloring_from_move – D
-# dodawanie i usuwanie z listy tabu - A
 # ustalenie parametrów
 # warunki akceptowania ruchów tabu
 # przypisanie pokolorowania do grafu i wyświetlenie go (ogólnie main)
@@ -38,8 +37,7 @@ class Tabu:
         self.graph = graph
         self.size = graph.size
         self.list_of_edges = graph.list_of_edges_pairs()
-        self.tabu = deque([])
-        self.tabu_tenure = 3  # zależy od rozmiaru i nasycenia grafu
+        self.tabu = deque([], maxlen=3) # długość zależy od rozmiaru i nasycenia grafu
         self.current_solution = Solution(self.list_of_edges, [random.randint(0, self.colors_number) for _ in range(self.size)])
         self.best_value = 10000000000
 
@@ -74,6 +72,7 @@ class Tabu:
                 neighbours.sort(key=operator.attrgetter('value'))
                 for neighbour in neighbours:
                     if not self.is_in_tabu(neighbour):
+                        self.tabu.append(neighbour.move)  # automatycznie usuwa 0. el., jak przekroczy długość kolejki
                         self.current_solution = neighbour
                         self.best_value = min(self.current_solution.value, self.best_value)
                         break
