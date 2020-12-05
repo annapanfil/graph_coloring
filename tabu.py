@@ -5,51 +5,53 @@ import random
 
 
 #TODO:
-# coloring_from_move – D
 # ustalenie parametrów
 # warunki akceptowania ruchów tabu
 
 class Solution:
-    def __init__(self, list_of_edges: list, parent, move=(None, None)):  # parent: Solution
+    def __init__(self, list_of_edges: list, parent, move=(None, None)):
         self.move = move
-        self.coloring = self.coloring_from_move(parent) if move != (
-            None, None) else parent  # taki trick dla 1. rozwiązania, bo nie da się zrobić dwóch konstruktorów...
+        if move == (None, None):
+            self.coloring = parent
+        else:
+            self.coloring_from_move(parent, move)
         self.value = self.objective_function(list_of_edges)
 
-    def coloring_from_move(self, parent) -> list:  # parent: Solution
-        return []
+    def coloring_from_move(self, parent, move):  # parent: Solution
+        self.coloring = parent.coloring.copy()
+        self.coloring[move[0]] = move[1]
 
     def objective_function(self, list_of_edges) -> int:
         conflicts = 0
         for edge in list_of_edges:
             if self.coloring[edge[0]] == self.coloring[edge[1]]:
                 conflicts += 1
-        print(conflicts)
         return conflicts
 
 
 class Tabu:
     def __init__(self, graph: Graph):
-        self.colors_number = 2
-        self.max_number_of_iterations = 1000  # zależy od rozmiaru i nasycenia grafu
+        self.colors_number = 3
         self.graph = graph
         self.size = graph.size
+        self.neighbours_number = 20 if self.size >= 20 else self.size
         self.list_of_edges = graph.list_of_edges_pairs()
-        self.tabu = deque([], maxlen=3) # długość zależy od rozmiaru i nasycenia grafu
-        self.current_solution = Solution(self.list_of_edges, [random.randint(0, self.colors_number) for _ in range(self.size)])
+        self.max_number_of_iterations = len(self.list_of_edges)  # zależy od rozmiaru i nasycenia grafu
+        self.tabu = deque([], maxlen=7)  # długość zależy od rozmiaru i nasycenia grafu
+        self.current_solution = Solution(self.list_of_edges, [random.randint(0, self.colors_number-1) for _ in range(self.size)])
         self.best_value = 10000000000
 
-    def generate_neighbours(self, how_many=10) -> list:  # obiekty Solution
+    def generate_neighbours(self) -> list:  # obiekty Solution
         neighbours = []
         vertexes_to_try = {i for i in range(self.size)}
-        for _ in range(how_many):
+        for _ in range(self.neighbours_number):
             # losuj wierzchołek i kolor tak, żeby uniknąć powtórzeń
             vertex = random.choice(tuple(vertexes_to_try))
             vertexes_to_try.remove(vertex)  #QUESTION: czy wierzchołki powinien powtarzać?
 
-            color = random.randint(0, self.colors_number)
+            color = random.randint(0, self.colors_number-1)
             while color == self.current_solution.coloring[vertex]:
-                color = random.randint(0, self.colors_number)
+                color = random.randint(0, self.colors_number-1)
 
             new_neighbour = Solution(self.list_of_edges, self.current_solution, (vertex, color))
             neighbours.append(new_neighbour)
@@ -59,6 +61,8 @@ class Tabu:
     def is_in_tabu(self, solution) -> bool:
         #TODO: warunki akceptowania ruchów tabu
         if solution.move in self.tabu:
+            if solution.value == 0:
+                return False
             return True
         else:
             return False
@@ -76,6 +80,7 @@ class Tabu:
                         break
                 # zakładamy, że w końcu coś znalazł
                 if self.current_solution.value == 0:
+                    print(self.current_solution.coloring, self.current_solution.value, self.colors_number)
                     return [self.current_solution.coloring, self.colors_number]
 
             self.colors_number += 1

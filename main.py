@@ -60,7 +60,7 @@ def main():
         graph.graph_coloring_greedy()
     else:
         tabu = Tabu(graph)
-        tabu.main()
+        graph.coloring, graph.colors = tabu.main()
 
     graph.show_coloring(debug)
     graph.visual()
