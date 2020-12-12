@@ -53,7 +53,7 @@ def main():
         print("Nie podano parametrów")
         return 0
 
-    if debug: graph.show_incidence_list()
+    # if debug: graph.show_incidence_list()
 
     # KOLOROWANIE
     if greedy:
