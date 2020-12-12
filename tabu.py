@@ -2,6 +2,7 @@ import operator
 from graph import Graph
 from collections import deque
 import random
+from math import log
 
 #TODO: ❗
 # generowanie sąsiadów – wierzchołki mogą się powtarzać
@@ -34,6 +35,9 @@ class Solution:
                 conflicts += 1
         return conflicts
 
+    def __str__(self):
+        return str(self.value)
+
 
 class Tabu:
     def __init__(self, graph: Graph):
@@ -43,16 +47,11 @@ class Tabu:
         self.size = graph.size
         self.neighbours_number = 30 if self.size >= 30 else self.size
         self.list_of_edges = graph.list_of_edges_pairs()
-        self.max_number_of_iterations = int(len(self.list_of_edges)/3)  # zależy od rozmiaru i nasycenia grafu
+        self.max_number_of_iterations = int(len(self.list_of_edges))
+            # int(50*log(len(self.list_of_edges), 2))  # zależy od rozmiaru i nasycenia grafu
+        print(self.max_number_of_iterations)
         self.tabu = deque([], maxlen=7)  # długość zależy od rozmiaru i nasycenia grafu
-
-        # coloring = graph.coloring
-        # for i in range(len(coloring)):
-        #     if coloring[i] > self.colors_number - 1:
-        #         coloring[i] = random.randint(0, self.colors_number - 1)
-        # self.current_solution = Solution(self.list_of_edges, coloring)
         self.current_solution = Solution(self.list_of_edges, [random.randint(0, self.colors_number-1) for _ in range(self.size)])
-
         self.best_value = 10000000000
 
     def generate_neighbours(self) -> list:  # obiekty Solution
@@ -85,11 +84,14 @@ class Tabu:
         number_of_iterations = 0
         while True:
             for i in range(self.max_number_of_iterations):
-                neighbours = self.generate_neighbours()
-                neighbours.sort(key=operator.attrgetter('value'))
+                if number_of_iterations % 3 == 0:
+                    neighbours = self.generate_neighbours()
+                    neighbours.sort(key=operator.attrgetter('value'))
                 for neighbour in neighbours:
                     if not self.is_in_tabu(neighbour):
+                        neighbour.coloring_from_move(self.current_solution, neighbour.move)
                         self.tabu.append(neighbour.move)  # automatycznie usuwa 0. el., jak przekroczy długość kolejki
+                        # print(self.current_solution.value - neighbour.value)
                         self.current_solution = neighbour
                         self.best_value = min(self.current_solution.value, self.best_value)
                         break
@@ -101,4 +103,4 @@ class Tabu:
                 number_of_iterations += 1
 
             self.colors_number += 1
-            print(self.colors_number, self.best_value)
+            # print(self.colors_number, self.best_value)
