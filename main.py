@@ -2,6 +2,16 @@ from graph import Graph
 from tabu import Tabu
 import argparse
 
+def tester():
+    repeats = 3
+    graphs_to_test = ["dziesiec", "instancja", "queen6.txt", "miles250.txt"] #"gc500.txt", gc_1000_300013.txt"
+    for filename in graphs_to_test:
+        colors_avg = 0
+        for i in range(repeats):
+            colors_avg += main([False, False, False, filename, None, False])
+        colors_avg /= repeats
+        print(f"\033[36m{filename} {colors_avg:.3f}\033[0m")
+
 
 def parse():
     parser = argparse.ArgumentParser()
@@ -12,12 +22,14 @@ def parse():
     parser.add_argument("-d", "--debug", action='store_true', help="debug mode")
     parser.add_argument("-e", "--export", help="export to file")
     parser.add_argument("-g", "--greedy", action='store_true', help="use greedy instead of tabu")
+    parser.add_argument("-i", "--image", action='store_true', help="show image of the coloured graph")
     filename = parser.parse_args().file
     debug = parser.parse_args().debug
     export = parser.parse_args().export
     greedy = parser.parse_args().greedy
+    image = parser.parse_args().image
 
-    if filename: return [debug, export, filename, None, greedy]
+    if filename: return [image, debug, export, filename, None, greedy]
 
     vertexes = parser.parse_args().vertexes
     saturation = parser.parse_args().saturation
@@ -29,11 +41,11 @@ def parse():
         generator_list.append(saturation)
         if graph_type: generator_list.append(graph_type)
 
-    return [debug, export, None, generator_list, greedy]
+    return [image, debug, export, None, generator_list, greedy]
 
 
-def main():
-    debug, export, filename, generator_list, greedy = parse()
+def main(args):
+    image, debug, export, filename, generator_list, greedy = args
 
     # GENEROWANIE GRAFU WG FLAG
     graph = Graph()
@@ -63,10 +75,12 @@ def main():
         graph.coloring, graph.colors = tabu.main()
 
     graph.show_coloring(debug)
-    graph.visual()
-
+    if image: graph.visual()
     if export: graph.export(export)
+
+    return graph.colors
 
 
 if __name__ == '__main__':
-    main()
+    # main(parse())
+    tester()
