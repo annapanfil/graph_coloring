@@ -5,13 +5,11 @@ import random
 from math import log
 
 #TODO: ❗
-# generowanie sąsiadów – wierzchołki mogą się powtarzać
 # ustalenie parametrów
 # warunek stopu = 2 min.
 # po upłynięciu czasu ulepsza rozwiązanie, w miejscu konfliktów stosując greedy, żeby było poprawne
 
 #IDEA: 🤔
-# rozw. zachłanne – wszystkie nieparzyste kolory np parzystym odpowiednikiem o 1 mniejszym v  wszystkie kolory powyżej x/2 zastąpić losowymi
 # zacząć od 1000 kolorów i zmniejszać ilość, odrzucając po 1
 
 
@@ -38,6 +36,8 @@ class Solution:
     def __str__(self):
         return str(self.value)
 
+    def __eq__(self, other): #!!! takie nie do końca equal
+        return self.move == other.move
 
 class Tabu:
     def __init__(self, graph: Graph):
@@ -55,24 +55,25 @@ class Tabu:
         self.best_value = 10000000000
 
     def generate_neighbours(self) -> list:  # obiekty Solution
+        # generowanie sąsiadów – jeden wierzchołek może być z kilkoma kolorami
+        # generowanie niepowtarzających się ruchów
+        neighbours_tuples = set()
         neighbours = []
-        vertexes_to_try = {i for i in range(self.size)}
-        for _ in range(self.neighbours_number):
-            # losuj wierzchołek i kolor tak, żeby uniknąć powtórzeń
-            vertex = random.choice(tuple(vertexes_to_try))
-            vertexes_to_try.remove(vertex)  #QUESTION: czy wierzchołki powinien powtarzać?
-
+        while len(neighbours_tuples) < self.neighbours_number:
+            vertex = random.randint(0, self.size-1)
             color = random.randint(0, self.colors_number-1)
             while color == self.current_solution.coloring[vertex]:
                 color = random.randint(0, self.colors_number-1)
 
-            new_neighbour = Solution(self.list_of_edges, self.current_solution, (vertex, color))
-            neighbours.append(new_neighbour)
+            neighbours_tuples.add((vertex, color))
+
+        # stworzenie obiektów na ich podstawie
+        for move in neighbours_tuples:
+            neighbours.append(Solution(self.list_of_edges, self.current_solution, move))
 
         return neighbours
 
     def is_in_tabu(self, solution) -> bool:
-        #TODO: warunki akceptowania ruchów tabu
         if solution.move in self.tabu:
             if solution.value < self.best_value:
                 return False
