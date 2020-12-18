@@ -19,7 +19,7 @@ class Solution:
         self.reversed_move = (move[0], coloring[move[0]])
         self.delta_value = self.delta_objective_function(incidence_list, coloring)
 
-    def delta_objective_function(self, incidence_list: list, coloring: list) -> int: #TODO: LIST_OF_EDGES->INCIDENCE_LIST
+    def delta_objective_function(self, incidence_list: list, coloring: list) -> int:
         conflicts_old_color = 0
         conflicts_new_color = 0
         vertex = self.move[0]
@@ -35,7 +35,7 @@ class Solution:
         return conflicts_new_color-conflicts_old_color #im mniejsza tym lepiej
 
     def __str__(self):
-        return str(self.value)
+        return "ruch "+str(self.move)+" Δf "+str(self.delta_value)
 
     def __eq__(self, other): #!!! takie nie do końca equal
         return self.move == other.move
@@ -46,17 +46,19 @@ class Tabu:
         graph.graph_coloring_greedy()
         self.upper_bound = graph.colors
         self.colors_number = max(int(graph.colors/2), graph.colors - 10)
+        if self.colors_number < 2: self.colors_number = 2
         self.graph = graph
         self.size = graph.size
         self.neighbours_number = 20 if self.size >= 20 else self.size
         self.list_of_edges = graph.list_of_edges_pairs()
-        self.max_number_of_iterations = 200
+        self.max_number_of_iterations = 800
         #self.max_number_of_iterations = int(len(self.list_of_edges)/2)
             # int(50*log(len(self.list_of_edges), 2))  # zależy od rozmiaru i nasycenia grafu
         self.tabu = deque([], maxlen=7)  # długość zależy od rozmiaru i nasycenia grafu
         self.current_solution = [random.randint(0, self.colors_number-1) for _ in range(self.size)]
         self.conflicts, self.vertex_conflicts_number = self.objective_function()
         self.best_value = 10000000000
+        # print("początkowe rozw:", self.current_solution)
 
     def objective_function(self) -> list:
         vertexes_conflicts = [0 for _ in range(self.size)]
@@ -66,6 +68,7 @@ class Tabu:
                 vertexes_conflicts[edge[0]] += 1
                 vertexes_conflicts[edge[1]] += 1
                 conflicts += 1
+        # print("konflikty:", conflicts, vertexes_conflicts)
         return conflicts, vertexes_conflicts
 
 
@@ -92,7 +95,7 @@ class Tabu:
         if solution.move in self.tabu:
             if (self.conflicts + solution.delta_value) < self.best_value:
                 return False
-            print("ten ruch jest tabu!")
+            # print("ten ruch jest tabu!")
             return True
         else:
             return False
@@ -105,6 +108,7 @@ class Tabu:
         new_color = solution.move[1]
         old_color = self.current_solution[vertex]
         self.conflicts += solution.delta_value
+        # print(self.conflicts)
         self.vertex_conflicts_number[vertex] += solution.delta_value
 
         for close_vertex in self.graph.incidence_list[vertex]:
@@ -119,13 +123,16 @@ class Tabu:
         number_of_iterations = 0
         while self.colors_number < self.upper_bound:
             for i in range(self.max_number_of_iterations):
-                if number_of_iterations % 3 == 0:
-                    neighbours = self.generate_neighbours()
-                    neighbours.sort(key=operator.attrgetter('delta_value'))
+                # if number_of_iterations % 3 == 0:
+                neighbours = self.generate_neighbours()
+                neighbours.sort(key=operator.attrgetter('delta_value'))
                 for neighbour in neighbours:
                     if not self.is_in_tabu(neighbour):
+                        # print(neighbour)
                         self.apply_solution(neighbour)
+                        # print(self.current_solution, "konflikty:", self.conflicts, self.vertex_conflicts_number)
                         self.tabu.append(neighbour.reversed_move)  # automatycznie usuwa 0. el., jak przekroczy długość kolejki
+                        neighbours.remove(neighbour)
                         self.best_value = min(self.conflicts, self.best_value)
                         break
                 # zakładamy, że w końcu coś znalazł
