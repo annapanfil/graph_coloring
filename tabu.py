@@ -42,12 +42,14 @@ class Solution:
 class Tabu:
     def __init__(self, graph: Graph):
         graph.graph_coloring_greedy()
-        self.colors_number = int(graph.colors/2)
+        self.upper_bound = graph.colors
+        self.colors_number = max(int(graph.colors/2), graph.colors - 10)
         self.graph = graph
         self.size = graph.size
-        self.neighbours_number = 30 if self.size >= 30 else self.size
+        self.neighbours_number = 20 if self.size >= 20 else self.size
         self.list_of_edges = graph.list_of_edges_pairs()
-        self.max_number_of_iterations = int(len(self.list_of_edges))
+        self.max_number_of_iterations = 200
+        #self.max_number_of_iterations = int(len(self.list_of_edges)/2)
             # int(50*log(len(self.list_of_edges), 2))  # zależy od rozmiaru i nasycenia grafu
         print(self.max_number_of_iterations)
         self.tabu = deque([], maxlen=7)  # długość zależy od rozmiaru i nasycenia grafu
@@ -83,7 +85,7 @@ class Tabu:
 
     def main(self) -> list:
         number_of_iterations = 0
-        while True:
+        while self.colors_number < self.upper_bound:
             for i in range(self.max_number_of_iterations):
                 if number_of_iterations % 3 == 0:
                     neighbours = self.generate_neighbours()
@@ -99,9 +101,12 @@ class Tabu:
                 # zakładamy, że w końcu coś znalazł
                 if self.current_solution.value == 0:
                     # print(self.current_solution.coloring, self.current_solution.value, self.colors_number)
-                    print("ilość iteracji:", number_of_iterations)
+                    # print("ilość iteracji:", number_of_iterations)
                     return [self.current_solution.coloring, self.colors_number]
                 number_of_iterations += 1
 
             self.colors_number += 1
+            print(self.colors_number, number_of_iterations, self.best_value)
+        print("rozwiązanie zachłanne. Najlepsze wygenerowane przez tabu:", self.best_value)
+        return [self.graph.coloring, self.graph.colors]
             # print(self.colors_number, self.best_value)
