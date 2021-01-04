@@ -45,7 +45,7 @@ class Tabu:
     def __init__(self, graph: Graph):
         graph.graph_coloring_greedy()
         self.upper_bound = graph.colors
-        self.colors_number = max(int(graph.colors/2), graph.colors - 10)
+        self.colors_number = max(int(graph.colors/2), graph.colors - 40)
         if self.colors_number < 2: self.colors_number = 2
         self.graph = graph
         self.size = graph.size
@@ -54,8 +54,7 @@ class Tabu:
         self.max_number_of_iterations = 800
         #self.max_number_of_iterations = int(len(self.list_of_edges)/2)
             # int(50*log(len(self.list_of_edges), 2))  # zależy od rozmiaru i nasycenia grafu
-        self.tabu_moves = deque([], maxlen=7)  # długość zależy od rozmiaru i nasycenia grafu
-        # self.tabu_vertexes = deque([], maxlen=7)
+        self.tabu_vertexes = deque([], maxlen=7) # długość zależy od rozmiaru i nasycenia grafu
         self.current_solution = [random.randint(0, self.colors_number-1) for _ in range(self.size)]
         self.all_conflicts, self.vertex_conflicts = self.objective_function()
         self.best_value = 10000000000
@@ -83,6 +82,7 @@ class Tabu:
         indexes.sort(reverse = True, key=self.vertex_conflicts.__getitem__)
 
         for vertex_nr in indexes:
+            if vertex_nr in self.tabu_vertexes: continue
             colors_for_this_vertex = min(self.colors_number-1, self.neighbours_number)
             neighbours_left -= colors_for_this_vertex
             for color in random.sample({c for c in range(self.colors_number)}, colors_for_this_vertex):
@@ -95,15 +95,6 @@ class Tabu:
             neighbours.append(Solution(self.graph.incidence_list, self.current_solution, move))
 
         return neighbours
-
-    def is_in_tabu(self, solution) -> bool:
-        if solution.move in self.tabu_moves:
-            if (self.all_conflicts + solution.delta_value) < self.best_value:
-                return False
-            # print("ten ruch jest tabu!")
-            return True
-        else:
-            return False
 
     def improve_solution(Solution):
         pass
@@ -124,31 +115,28 @@ class Tabu:
 
         self.current_solution[vertex] = new_color
 
+        self.tabu_vertexes.append(solution.move[0]) # automatycznie usuwa 0. el., jak przekroczy długość kolejki
+        self.best_value = min(self.all_conflicts, self.best_value)
+
     def main(self) -> list:
         number_of_iterations = 0
         while self.colors_number < self.upper_bound:
             for i in range(self.max_number_of_iterations):
-                # if number_of_iterations % 3 == 0:
                 neighbours = self.generate_neighbours()
-                neighbours.sort(key=operator.attrgetter('delta_value'))
-                for neighbour in neighbours:
-                    if not self.is_in_tabu(neighbour):
-                        # print(neighbour)
-                        self.apply_solution(neighbour)
-                        # print(self.current_solution, "konflikty:", self.all_conflicts, self.vertex_conflicts)
-                        self.tabu_moves.append(neighbour.reversed_move)  # automatycznie usuwa 0. el., jak przekroczy długość kolejki
-                        neighbours.remove(neighbour)
-                        self.best_value = min(self.all_conflicts, self.best_value)
-                        break
+                solution = min(neighbours, key=operator.attrgetter('delta_value'))
+                self.apply_solution(solution)
+                # print(self.current_solution, "konflikty:", self.all_conflicts, self.vertex_conflicts)
+                neighbours.remove(solution)
+
                 # zakładamy, że w końcu coś znalazł
                 if self.all_conflicts == 0:
                     # print(self.coloring, self.value, self.colors_number)
                     # print("ilość iteracji:", number_of_iterations)
+                    # print(self.all_conflicts, self.vertex_conflicts, self.best_value)
                     return [self.current_solution, self.colors_number]
                 number_of_iterations += 1
 
             self.colors_number += 1
-            # print(self.colors_number, number_of_iterations, self.best_value)
+            print(self.colors_number, number_of_iterations, self.best_value)
         print("rozwiązanie zachłanne. Najlepsze wygenerowane przez tabu:", self.best_value)
         return [self.graph.coloring, self.graph.colors]
-            # print(self.colors_number, self.best_value)
