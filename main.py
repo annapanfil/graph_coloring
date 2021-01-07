@@ -1,16 +1,21 @@
 from graph import Graph
 from tabu import Tabu
 import argparse
+import time
 
 def tester():
     repeats = 5
     graphs_to_test = ["queen6.txt", "anna.col", "david.col", "miles250.txt", "le450_5a.txt", "gc500.txt", "gc_1000_300013.txt"]
     for filename in graphs_to_test:
         colors_avg = 0
+        time_avg = 0
         for i in range(repeats):
-            colors_avg += main([False, False, False, "instances/"+filename, None, False])
+            colors_curr, time_curr = main([False, False, False, "instances/"+filename, None, False])
+            colors_avg += colors_curr
+            time_avg += time_curr
         colors_avg /= repeats
-        print(f"\033[36m{filename} {colors_avg:.3f}\033[0m")
+        time_avg /= repeats
+        print(f"\033[36m{filename} {colors_avg:.3f} {time_avg:.3f}\033[0m")
 
 
 def parse():
@@ -43,6 +48,12 @@ def parse():
 
     return [image, debug, export, None, generator_list, greedy]
 
+def measure_time(function):
+    start = time.clock()
+    result = function()
+    end = time.clock()
+    duration = end - start
+    return (duration, result)
 
 def main(args):
     image, debug, export, filename, generator_list, greedy = args
@@ -68,19 +79,21 @@ def main(args):
     if debug: graph.show_incidence_list()
 
     # KOLOROWANIE
+    duration = 0
     if greedy:
         graph.graph_coloring_greedy()
     else:
         tabu = Tabu(graph)
-        graph.coloring, graph.colors = tabu.main()
+        duration, result = measure_time(tabu.main)
+        graph.coloring, graph.colors = result
 
-    graph.show_coloring(debug)
+    # graph.show_coloring(debug)
     if image: graph.visual()
     if export: graph.export(export)
 
-    return graph.colors
+    return graph.colors, duration
 
 
 if __name__ == '__main__':
-    main(parse())
-    # tester()
+    # main(parse())
+    tester()

@@ -2,16 +2,11 @@ import operator
 from graph import Graph
 from collections import deque
 import random
-from math import log
+from math import log, ceil
 
 #TODO: ❗
 # ustalenie parametrów
 # warunek stopu = 2 min.
-# po upłynięciu czasu ulepsza rozwiązanie, w miejscu konfliktów stosując greedy, żeby było poprawne
-
-#IDEA: 🤔
-# zacząć od 1000 kolorów i zmniejszać ilość, odrzucając po 1
-
 
 class Solution:
     def __init__(self, incidence_list: list, coloring: list, move: tuple, delta_value = None):
@@ -144,6 +139,7 @@ class Tabu:
         # self.tabu_vertexes.append(solution.move[0]) # automatycznie usuwa 0. el., jak przekroczy długość kolejki
         self.best_value = min(self.all_conflicts, self.best_value)
 
+
     def main(self) -> list:
         number_of_iterations = 0
         while self.colors_number < self.upper_bound:
@@ -172,6 +168,6 @@ class Tabu:
                 number_of_iterations += 1
 
             self.colors_number += 1
-            print(self.colors_number, self.best_value)
-        print("rozwiązanie zachłanne. Najlepsze wygenerowane przez tabu:", self.best_value)
+            # print(self.colors_number, self.best_value)
+        # print("rozwiązanie zachłanne. Najlepsze wygenerowane przez tabu:", self.best_value)
         return [self.graph.coloring, self.graph.colors]
