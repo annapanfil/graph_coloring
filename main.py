@@ -3,12 +3,12 @@ from tabu import Tabu
 import argparse
 
 def tester():
-    repeats = 3
-    graphs_to_test = ["dziesiec", "instancja", "queen6.txt", "miles250.txt"] #"gc500.txt", gc_1000_300013.txt"
+    repeats = 5
+    graphs_to_test = ["queen6.txt", "anna.col", "david.col", "miles250.txt", "le450_5a.txt", "gc500.txt", "gc_1000_300013.txt"]
     for filename in graphs_to_test:
         colors_avg = 0
         for i in range(repeats):
-            colors_avg += main([False, False, False, filename, None, False])
+            colors_avg += main([False, False, False, "instances/"+filename, None, False])
         colors_avg /= repeats
         print(f"\033[36m{filename} {colors_avg:.3f}\033[0m")
 
@@ -65,7 +65,7 @@ def main(args):
         print("Nie podano parametrów")
         return 0
 
-    # if debug: graph.show_incidence_list()
+    if debug: graph.show_incidence_list()
 
     # KOLOROWANIE
     if greedy:
@@ -82,5 +82,5 @@ def main(args):
 
 
 if __name__ == '__main__':
-    # main(parse())
-    tester()
+    main(parse())
+    # tester()

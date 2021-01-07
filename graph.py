@@ -217,4 +217,3 @@ class Graph:
             file.write(str(self.size) + "\n")
             for i in range(len(v0)): file.write(str(v0[i]) + " " + str(v1[i]) + "\n")
             print("Zapisano do pliku " + filename)
-
