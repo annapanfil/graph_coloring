@@ -4,18 +4,20 @@ import argparse
 import time
 
 def tester():
-    repeats = 5
-    graphs_to_test = ["queen6.txt", "anna.col", "david.col", "miles250.txt", "le450_5a.txt", "gc500.txt", "gc_1000_300013.txt"]
+    repeats = 3
+    graphs_to_test = ["queen6.txt", "anna.col", "david.col", "miles250.txt", "le450_5a.txt", "gc500.txt", "gc_1000_300013.txt"] # "mulsol.i.1.col", "zeroin.i.1.col", "le450_25d.col", "fpsol2.i.2.col", "inithx.i.1.col", "queen13_13.col" 
     for filename in graphs_to_test:
         colors_avg = 0
+        colors_min = 100000
         time_avg = 0
         for i in range(repeats):
             colors_curr, time_curr = main([False, False, False, "instances/"+filename, None, False])
             colors_avg += colors_curr
+            colors_min = min(colors_min, colors_curr)
             time_avg += time_curr
         colors_avg /= repeats
         time_avg /= repeats
-        print(f"\033[36m{filename} {colors_avg:.3f} {time_avg:.3f}\033[0m")
+        print(f"\033[36m{filename} {colors_avg:.3f} {time_avg:.3f} {colors_min}\033[0m")
 
 
 def parse():
@@ -74,6 +76,7 @@ def main(args):
             return 0
     else:
         print("Nie podano parametrów")
+        tester()
         return 0
 
     if debug: graph.show_incidence_list()

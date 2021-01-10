@@ -2,11 +2,7 @@ import operator
 from graph import Graph
 from collections import deque
 import random
-from math import log, ceil
-
-#TODO: ❗
-# ustalenie parametrów
-# warunek stopu = 2 min.
+from math import ceil, floor
 
 
 class Solution:
@@ -44,18 +40,16 @@ class Tabu:
         graph.graph_coloring_greedy()                           # approximate solution
         self.graph = graph
         self.size = graph.size
+        # print(graph.size)
         self.list_of_edges = graph.list_of_edges_pairs()
         self.upper_bound = graph.colors                         # can't be worse than greedy
 
         """Parameters to adjust"""
-        self.colors_number = max(int(graph.colors/2), graph.colors - 50) # start colors number
+        self.colors_number = max(int(graph.colors/2), graph.colors - 50) # start colors number; WARNING: it changes max_number_of_iterations
         if self.colors_number < 2: self.colors_number = 2
         self.max_neighbours = min(40, self.size)                # max number of generate neighbour solutions
-        self.max_number_of_iterations = 800                     # number of iterations before color changing
-        #self.max_number_of_iterations = int(len(self.list_of_edges)/2)
-            # int(50*log(len(self.list_of_edges), 2))
-        self.tabu_vertexes = deque([], maxlen=7)                # length of tabu list (in tabu we keep vertexes)
-
+        self.max_number_of_iterations = 0+800                     # first number of iterations before color changing
+        self.tabu_vertexes = deque([], maxlen=ceil(self.size/50+30))                # length of tabu list (in tabu we keep vertexes)
         self.coloring = [random.randint(0, self.colors_number - 1) for _ in range(self.size)]    # start coloring – random
         self.all_conflicts, self.vertex_conflicts = self.objective_function()                    # start conflicts number – to minimize
         self.vertexes_sorted = None                                                              # vertexes sorted by conflicts number
@@ -169,8 +163,10 @@ class Tabu:
 
     def main(self) -> list:
         # parameters to adjust
-        iter_before_improve = ceil(self.size/50)
+        iter_before_improve = ceil(self.size/50) if self.size > 200 else self.max_number_of_iterations
         iter_before_sorting = ceil(self.size/50)
+
+        min_colors = self.colors_number
 
         while self.colors_number < self.upper_bound:
             for i in range(self.max_number_of_iterations):
@@ -182,7 +178,7 @@ class Tabu:
                 # create neighbours and apply the best
                 neighbours = self.generate_neighbours()
                 solution = min(neighbours, key=operator.attrgetter('delta_value'))
-                if solution.delta_value <= 0:                #QUESTION: accept improvement only. To dobrze?
+                if solution.delta_value <= 0:               # accept improvement only
                     self.apply_solution(solution)
                 self.tabu_vertexes.append(solution.move[0])  #QUESTION: tu czy w apply?
 
@@ -191,6 +187,7 @@ class Tabu:
                     #QUESTION: A może od razu wpisywać do self.graph.coloring?
 
             self.colors_number += 1
+            self.max_number_of_iterations = round(4*(self.colors_number-min_colors)+800)
             # print(self.colors_number, self.best_value)
         # print("Rozwiązanie zachłanne. Najmniejsza liczba konfliktów:", self.best_value)
         return [self.graph.coloring, self.graph.colors]     # hit upper bound, return greedy solution
